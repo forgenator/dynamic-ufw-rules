@@ -1,12 +1,22 @@
 #!/bin/bash
 
 # Configuration
-HOSTNAME=host.domainname.tld
+HOSTNAME=host.domain.tld
 SSH_PORT=22
 TIMESTAMP=`date "+%Y-%m-%dT%H:%M:%S"`
 
-# Cronjob for every 15min
-#*/15 * * * * root bash /path/to/dynamicdnsupdater.sh
+Gotify_URL="https://host.domain.tld"
+Gotify_Token="xxx"
+
+notify()
+{
+        curl -X POST -s \
+                -F "title=${1}" \
+                -F "message=${2}" \
+                -F "priority=5" \
+                "${Gotify_URL}/message?token=${Gotify_Token}"
+
+}
 
 if [[ $EUID -ne 0 ]]; then
    echo "This script must be run as root"
@@ -19,7 +29,7 @@ old_ip=$(/usr/sbin/ufw status | grep $HOSTNAME | head -n1 | tr -s ' ' | cut -f3 
 
 # Check if new_ip is valid ip address
 if [[ "$new_ip" =~ ^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$ ]]; then
-  # Logic for updating ufw rules or not
+  # Logic
   if [ "$new_ip" = "$old_ip" ] ; then
     echo "$TIMESTAMP IP address has not changed - $old_ip" >> /var/log/dynamicdnsupdater.log
   else
@@ -28,7 +38,8 @@ if [[ "$new_ip" =~ ^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4]
     fi
     /usr/sbin/ufw allow from $new_ip to any port $SSH_PORT comment $HOSTNAME
     echo "$TIMESTAMP IP has changed, UFW set from $old_ip to $new_ip" >> /var/log/dynamicdnsupdater.log
+    notify "IP Address of VPN Changed" "IP Address has been updated to $new_ip"
   fi
 else
-  echo "Not valid IP - $new_ip" >> /var/log/dynamicdnsupdater.log
+  echo "$TIMESTAMP Not valid IP - $new_ip" >> /var/log/dynamicdnsupdater.log
 fi
