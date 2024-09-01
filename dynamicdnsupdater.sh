@@ -1,12 +1,11 @@
 #!/bin/bash
 
-# Configuration
-HOSTNAME=host.domain.tld
-SSH_PORT=22
-TIMESTAMP=`date "+%Y-%m-%dT%H:%M:%S"`
 
-Gotify_URL="https://host.domain.tld"
-Gotify_Token="xxx"
+# Load stuff from .env file
+[ ! -f .env ] || export $(grep -v '^#' .env | xargs)
+
+# Static Configuration
+TIMESTAMP=`date "+%Y-%m-%dT%H:%M:%S"`
 
 notify()
 {
